@@ -17,6 +17,7 @@
 package com.google.samples.gridtopager.fragment;
 
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -40,10 +41,10 @@ public class ImageFragment extends Fragment {
 
   private static final String KEY_IMAGE_RES = "com.google.samples.gridtopager.key.imageRes";
 
-  public static ImageFragment newInstance(@DrawableRes int drawableRes) {
+  public static ImageFragment newInstance(Uri uri) {
     ImageFragment fragment = new ImageFragment();
     Bundle argument = new Bundle();
-    argument.putInt(KEY_IMAGE_RES, drawableRes);
+    argument.putString(KEY_IMAGE_RES, uri.toString());
     fragment.setArguments(argument);
     return fragment;
   }
@@ -55,15 +56,13 @@ public class ImageFragment extends Fragment {
     final View view = inflater.inflate(R.layout.fragment_image, container, false);
 
     Bundle arguments = getArguments();
-    @DrawableRes int imageRes = arguments.getInt(KEY_IMAGE_RES);
-
-    // Just like we do when binding views at the grid, we set the transition name to be the string
-    // value of the image res.
-    view.findViewById(R.id.image).setTransitionName(String.valueOf(imageRes));
+    String imageRes = arguments.getString(KEY_IMAGE_RES);
+    Uri uri = Uri.parse(imageRes);
+    view.findViewById(R.id.image).setTransitionName(imageRes);
 
     // Load the image with Glide to prevent OOM error when the image drawables are very large.
     Glide.with(this)
-        .load(imageRes)
+        .load(uri)
         .listener(new RequestListener<Drawable>() {
           @Override
           public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable>

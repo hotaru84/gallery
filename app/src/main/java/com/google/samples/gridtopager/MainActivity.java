@@ -15,9 +15,13 @@
  */
 package com.google.samples.gridtopager;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.samples.gridtopager.fragment.GridFragment;
@@ -32,7 +36,6 @@ public class MainActivity extends AppCompatActivity {
    * position updated when a grid item is clicked, or when paging the pager.
    *
    * In this demo app, the position always points to an image index at the {@link
-   * com.google.samples.gridtopager.adapter.ImageData} class.
    */
   public static int currentPosition;
   private static final String KEY_CURRENT_POSITION = "com.google.samples.gridtopager.key.currentPosition";
@@ -46,16 +49,49 @@ public class MainActivity extends AppCompatActivity {
       // Return here to prevent adding additional GridFragments when changing orientation.
       return;
     }
+    if(ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED
+            || ActivityCompat.checkSelfPermission(this,
+            Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED)
+    {
+      ActivityCompat.requestPermissions(this,
+              new String[]{
+                      Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                      Manifest.permission.READ_CONTACTS
+              },
+              1);
+    } else {
+      init();
+    }
+  }
+  private void init() {
     FragmentManager fragmentManager = getSupportFragmentManager();
     fragmentManager
-        .beginTransaction()
-        .add(R.id.fragment_container, new GridFragment(), GridFragment.class.getSimpleName())
-        .commit();
+            .beginTransaction()
+            .add(R.id.fragment_container, new GridFragment(), GridFragment.class.getSimpleName())
+            .commit();
   }
 
   @Override
   protected void onSaveInstanceState(@NonNull Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putInt(KEY_CURRENT_POSITION, currentPosition);
+  }
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permission, int[] grantResults){
+    if (grantResults.length <= 0) { return; }
+    switch(requestCode){
+      case 1: {
+        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+          init();
+        } else {
+          Toast.makeText(this, "アプリを起動できません....", Toast.LENGTH_LONG).show();
+          finish();
+        }
+      }
+      return;
+    }
   }
 }

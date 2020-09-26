@@ -16,14 +16,17 @@
 
 package com.google.samples.gridtopager.adapter;
 
-import static com.google.samples.gridtopager.adapter.ImageData.IMAGE_DRAWABLES;
-
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.transition.TransitionSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,7 +59,8 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
 
     void onItemClicked(View view, int adapterPosition);
   }
-
+  private Cursor cursor;
+  private ContentResolver resolver;
   private final RequestManager requestManager;
   private final ViewHolderListener viewHolderListener;
 
@@ -66,6 +70,8 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
   public GridAdapter(Fragment fragment) {
     this.requestManager = Glide.with(fragment);
     this.viewHolderListener = new ViewHolderListenerImpl(fragment);
+    this.resolver = fragment.getContext().getContentResolver();
+    updateCursor();
   }
 
   @NonNull
@@ -73,7 +79,7 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
   public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
     View view = LayoutInflater.from(parent.getContext())
         .inflate(R.layout.image_card, parent, false);
-    return new ImageViewHolder(view, requestManager, viewHolderListener);
+    return new ImageViewHolder(view, requestManager, viewHolderListener,cursor);
   }
 
   @Override
@@ -83,7 +89,7 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
 
   @Override
   public int getItemCount() {
-    return IMAGE_DRAWABLES.length;
+    return cursor.getCount();
   }
 
 
@@ -146,17 +152,18 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
    */
   static class ImageViewHolder extends RecyclerView.ViewHolder implements
       View.OnClickListener {
-
+    private final Cursor cursor;
     private final ImageView image;
     private final RequestManager requestManager;
     private final ViewHolderListener viewHolderListener;
 
     ImageViewHolder(View itemView, RequestManager requestManager,
-        ViewHolderListener viewHolderListener) {
+        ViewHolderListener viewHolderListener,Cursor cursor) {
       super(itemView);
       this.image = itemView.findViewById(R.id.card_image);
       this.requestManager = requestManager;
       this.viewHolderListener = viewHolderListener;
+      this.cursor = cursor;
       itemView.findViewById(R.id.card_view).setOnClickListener(this);
     }
 
@@ -167,16 +174,17 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
      * later.
      */
     void onBind() {
-      int adapterPosition = getAdapterPosition();
-      setImage(adapterPosition);
+      int pos =getAdapterPosition();
+      cursor.moveToPosition(pos);
+      int nameIndex = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DISPLAY_NAME);
       // Set the string value of the image resource as the unique transition name for the view.
-      image.setTransitionName(String.valueOf(IMAGE_DRAWABLES[adapterPosition]));
+      image.setTransitionName(cursor.getString(nameIndex));
+      setImage(pos);
     }
-
     void setImage(final int adapterPosition) {
       // Load the image with Glide to prevent OOM error when the image drawables are very large.
       requestManager
-          .load(IMAGE_DRAWABLES[adapterPosition])
+          .load(getUri())
           .listener(new RequestListener<Drawable>() {
             @Override
             public boolean onLoadFailed(@Nullable GlideException e, Object model,
@@ -194,12 +202,20 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
           })
           .into(image);
     }
-
+    private Uri getUri() {
+      int idColumn= cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID);
+      long id = cursor.getLong(idColumn);
+      return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,String.valueOf(id));
+    }
     @Override
     public void onClick(View view) {
       // Let the listener start the ImagePagerFragment.
       viewHolderListener.onItemClicked(view, getAdapterPosition());
     }
   }
-
+  public void updateCursor() {
+    this.cursor = resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            null,null,null,
+            MediaStore.Images.Media.DATE_ADDED + " DESC");
+  }
 }

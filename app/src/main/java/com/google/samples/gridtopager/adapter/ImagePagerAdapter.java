@@ -16,7 +16,10 @@
 
 package com.google.samples.gridtopager.adapter;
 
-import static com.google.samples.gridtopager.adapter.ImageData.IMAGE_DRAWABLES;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -25,19 +28,34 @@ import com.google.samples.gridtopager.fragment.ImageFragment;
 
 public class ImagePagerAdapter extends FragmentStatePagerAdapter {
 
+  private Cursor cursor;
+  private ContentResolver resolver;
   public ImagePagerAdapter(Fragment fragment) {
     // Note: Initialize with the child fragment manager.
     super(fragment.getChildFragmentManager(), BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
+    resolver = fragment.getContext().getContentResolver();
+    updateCursor();
   }
-
+  private Uri getUri() {
+    int idColumn= cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID);
+    long id = cursor.getLong(idColumn);
+    return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,String.valueOf(id));
+  }
   @Override
   public int getCount() {
-    return IMAGE_DRAWABLES.length;
+    return cursor.getCount();
   }
 
   @NonNull
   @Override
   public Fragment getItem(int position) {
-    return ImageFragment.newInstance(IMAGE_DRAWABLES[position]);
+    cursor.moveToPosition(position);
+    return ImageFragment.newInstance(getUri());
+  }
+
+  public void updateCursor() {
+    this.cursor = resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            null,null,null,
+            MediaStore.Images.Media.DATE_ADDED + " DESC");
   }
 }
