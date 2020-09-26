@@ -23,39 +23,47 @@ import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.fragment.app.FragmentActivity;
+import androidx.viewpager2.adapter.FragmentStateAdapter;
+
 import com.google.samples.gridtopager.fragment.ImageFragment;
 
-public class ImagePagerAdapter extends FragmentStatePagerAdapter {
+import java.util.HashMap;
 
+public class ImagePagerAdapter extends FragmentStateAdapter {
+  private HashMap<Integer, Fragment> hashMap = new HashMap<>();
   private Cursor cursor;
   private ContentResolver resolver;
-  public ImagePagerAdapter(Fragment fragment) {
+  public ImagePagerAdapter(FragmentActivity fragment) {
     // Note: Initialize with the child fragment manager.
-    super(fragment.getChildFragmentManager(), BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT);
-    resolver = fragment.getContext().getContentResolver();
+    super(fragment);
+    resolver = fragment.getContentResolver();
     updateCursor();
   }
+  public Fragment getFragment(int position) {return hashMap.get(position);}
+  @NonNull
+  @Override
+  public Fragment createFragment(int position) {
+    cursor.moveToPosition(position);
+    Fragment f = ImageFragment.newInstance(getUri());
+    hashMap.put(position,f);
+    return f;
+  }
+
   private Uri getUri() {
     int idColumn= cursor.getColumnIndex(MediaStore.Images.ImageColumns._ID);
     long id = cursor.getLong(idColumn);
     return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,String.valueOf(id));
-  }
-  @Override
-  public int getCount() {
-    return cursor.getCount();
-  }
-
-  @NonNull
-  @Override
-  public Fragment getItem(int position) {
-    cursor.moveToPosition(position);
-    return ImageFragment.newInstance(getUri());
   }
 
   public void updateCursor() {
     this.cursor = resolver.query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             null,null,null,
             MediaStore.Images.Media.DATE_ADDED + " DESC");
+  }
+
+  @Override
+  public int getItemCount() {
+    return cursor.getCount();
   }
 }

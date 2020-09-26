@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.core.app.SharedElementCallback;
 import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager2.widget.ViewPager2;
+
 import android.transition.Transition;
 import android.transition.TransitionInflater;
 import android.view.LayoutInflater;
@@ -37,24 +39,25 @@ import java.util.Map;
  */
 public class ImagePagerFragment extends Fragment {
 
-  private ViewPager viewPager;
-
+  private ViewPager2 viewPager;
+  private ImagePagerAdapter imagePagerAdapter;
   @Nullable
   @Override
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
       @Nullable Bundle savedInstanceState) {
-    viewPager = (ViewPager) inflater.inflate(R.layout.fragment_pager, container, false);
-    viewPager.setAdapter(new ImagePagerAdapter(this));
+    viewPager = (ViewPager2) inflater.inflate(R.layout.fragment_pager, container, false);
+    imagePagerAdapter = new ImagePagerAdapter(getActivity());
+    viewPager.setAdapter(imagePagerAdapter);
     // Set the current position and add a listener that will update the selection coordinator when
     // paging the images.
     viewPager.setCurrentItem(MainActivity.currentPosition);
-    viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+    viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
       @Override
       public void onPageSelected(int position) {
+        super.onPageSelected(position);
         MainActivity.currentPosition = position;
       }
     });
-
     prepareSharedElementTransition();
 
     // Avoid a postponeEnterTransition on orientation change, and postpone only of first creation.
@@ -83,8 +86,7 @@ public class ImagePagerFragment extends Fragment {
             // visible). To locate the fragment, call instantiateItem with the selection position.
             // At this stage, the method will simply return the fragment at the position and will
             // not create a new one.
-            Fragment currentFragment = (Fragment) viewPager.getAdapter()
-                .instantiateItem(viewPager, MainActivity.currentPosition);
+            Fragment currentFragment = (Fragment) imagePagerAdapter.getFragment(MainActivity.currentPosition);
             View view = currentFragment.getView();
             if (view == null) {
               return;

@@ -87,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
         if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
           init();
         } else {
-          Toast.makeText(this, "アプリを起動できません....", Toast.LENGTH_LONG).show();
           finish();
         }
       }
