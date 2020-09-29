@@ -23,7 +23,6 @@ import android.provider.MediaStore;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.google.samples.gridtopager.fragment.ImageFragment;
@@ -34,19 +33,22 @@ public class ImagePagerAdapter extends FragmentStateAdapter {
   private HashMap<Integer, Fragment> hashMap = new HashMap<>();
   private Cursor cursor;
   private ContentResolver resolver;
-  public ImagePagerAdapter(FragmentActivity fragment) {
-    // Note: Initialize with the child fragment manager.
+
+  public ImagePagerAdapter(Fragment fragment) {
     super(fragment);
-    resolver = fragment.getContentResolver();
+    resolver = fragment.getContext().getContentResolver();
     updateCursor();
   }
-  public Fragment getFragment(int position) {return hashMap.get(position);}
   @NonNull
   @Override
   public Fragment createFragment(int position) {
-    cursor.moveToPosition(position);
-    Fragment f = ImageFragment.newInstance(getUri());
-    hashMap.put(position,f);
+    Fragment f = hashMap.get(position);
+    if(f == null) {
+      cursor.moveToPosition(position);
+      Fragment ff = ImageFragment.newInstance(getUri());
+      hashMap.put(position, ff);
+      return ff;
+    }
     return f;
   }
 

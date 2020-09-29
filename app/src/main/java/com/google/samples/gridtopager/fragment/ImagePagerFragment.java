@@ -25,12 +25,15 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import android.transition.Transition;
 import android.transition.TransitionInflater;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import com.google.samples.gridtopager.MainActivity;
 import com.google.samples.gridtopager.adapter.ImagePagerAdapter;
 import com.google.samples.gridtopager.R;
+import com.google.samples.gridtopager.adapter.ZoomOutPageTransformer;
+
 import java.util.List;
 import java.util.Map;
 
@@ -46,11 +49,12 @@ public class ImagePagerFragment extends Fragment {
   public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
       @Nullable Bundle savedInstanceState) {
     viewPager = (ViewPager2) inflater.inflate(R.layout.fragment_pager, container, false);
-    imagePagerAdapter = new ImagePagerAdapter(getActivity());
+    imagePagerAdapter = new ImagePagerAdapter(this);
     viewPager.setAdapter(imagePagerAdapter);
+    viewPager.setOffscreenPageLimit(3);
+    viewPager.setPageTransformer(new ZoomOutPageTransformer());
     // Set the current position and add a listener that will update the selection coordinator when
     // paging the images.
-    viewPager.setCurrentItem(MainActivity.currentPosition);
     viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
       @Override
       public void onPageSelected(int position) {
@@ -58,6 +62,8 @@ public class ImagePagerFragment extends Fragment {
         MainActivity.currentPosition = position;
       }
     });
+    viewPager.setCurrentItem(MainActivity.currentPosition,false);
+
     prepareSharedElementTransition();
 
     // Avoid a postponeEnterTransition on orientation change, and postpone only of first creation.
@@ -80,20 +86,19 @@ public class ImagePagerFragment extends Fragment {
     // A similar mapping is set at the GridFragment with a setExitSharedElementCallback.
     setEnterSharedElementCallback(
         new SharedElementCallback() {
+
           @Override
           public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
-            // Locate the image view at the primary fragment (the ImageFragment that is currently
-            // visible). To locate the fragment, call instantiateItem with the selection position.
-            // At this stage, the method will simply return the fragment at the position and will
-            // not create a new one.
-            Fragment currentFragment = (Fragment) imagePagerAdapter.getFragment(MainActivity.currentPosition);
+            if(imagePagerAdapter.getItemCount() == 0) return;
+            Fragment currentFragment = imagePagerAdapter.createFragment(MainActivity.currentPosition);
             View view = currentFragment.getView();
-            if (view == null) {
+            if(view == null){
+              Log.d("@@","view null");
               return;
             }
-
-            // Map the first shared element name to the child ImageView.
-            sharedElements.put(names.get(0), view.findViewById(R.id.image));
+            View elementView = view.findViewById(R.id.image);
+            if(elementView == null) return;
+            sharedElements.put(names.get(0), elementView);
           }
         });
   }

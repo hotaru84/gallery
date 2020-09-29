@@ -150,8 +150,7 @@ public class GridAdapter extends RecyclerView.Adapter<ImageViewHolder> {
   /**
    * ViewHolder for the grid's images.
    */
-  static class ImageViewHolder extends RecyclerView.ViewHolder implements
-      View.OnClickListener {
+  static class ImageViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
     private final Cursor cursor;
     private final ImageView image;
     private final RequestManager requestManager;
